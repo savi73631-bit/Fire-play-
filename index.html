@@ -1414,7 +1414,16 @@
 </head>
 
 <body>
-
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignal = window.OneSignal || [];
+  OneSignal.push(function() {
+    OneSignal.init({
+      appId: "35f4ebe0-bdab-462b-9c04-b52efa2c3c81",
+    });
+  });
+</script>
+    
 
 <div id="app-splash">
     <div class="splash-logo-box">
