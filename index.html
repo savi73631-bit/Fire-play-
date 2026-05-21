@@ -2505,15 +2505,29 @@
         const isJoined = userJoinedMatches.includes(m.dbKey);
         
         const catImg = activeCategories[m.categoryId] ? activeCategories[m.categoryId].img : '';
-        
         let btnJoinHTML = '';
+        
+        // ম্যাচের বর্তমান তথ্য ও স্লট সংখ্যা কনভার্ট করে নেওয়া
+        let currentJoined = parseInt(m.joined || 0);
+        let totalSlots = parseInt(m.total || 48); // ডাটাবেসে না থাকলে ডিফল্ট ৪৮
+        let matchStatus = m.status ? m.status.toLowerCase() : 'upcoming';
+
         if (type === 'play') {
-            if (isJoined) {
-                btnJoinHTML = `<button class="btn-join-main disabled">JOINED</button>`;
+            if (matchStatus === 'playing' || matchStatus === 'started') {
+                // ১. ম্যাচ লাইভ বা শুরু হয়ে গেলে সবুজ PLAYING বাটন
+                btnJoinHTML = `<button class="btn-join-main" style="background-color: #28a745 !important; color: white;" disabled>PLAYING</button>`;
+            } else if (currentJoined >= totalSlots) {
+                // ২. স্লট ফুল হয়ে গেলে লাল CLOSED বাটন
+                btnJoinHTML = `<button class="btn-join-main" style="background-color: #dc3545 !important; color: white;" disabled>CLOSED</button>`;
+            } else if (isJoined) {
+                // ৩. ইউজার অলরেডি জয়েন করা থাকলে JOINED বাটন
+                btnJoinHTML = `<button class="btn-join-main disabled" disabled>JOINED</button>`;
             } else {
-                // Pass m.dbKey as the ID for joining
-                btnJoinHTML = `<button class="btn-join-main" onclick="event.stopPropagation(); window.prepJoin('${m.dbKey}', '${m.type}', ${m.entry}, '${m.dbKey}', '${m.title}')">Join</button>`;
+                // ৪. স্লট খালি থাকলে স্বাভাবিক জয়েন বাটন (আপনার আগের কোডটি)
+                btnJoinHTML = `<button class="btn-join-main" onclick="event.stopPropagation(); prepJoin('${m.dbKey}', '${m.type}', '${m.entry}', '${m.dbKey}', '${m.title}')">JOIN</button>`;
             }
+        }
+        
         } else if (type === 'joined') {
              btnJoinHTML = `<button class="btn-join-main disabled">JOINED</button>`;
         } else {
