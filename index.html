@@ -2844,41 +2844,43 @@
          try {
              await update(ref(db, 'users/'+currentUser.uid), {deposit:d, winning:w});
              
-                       // Push to match_participants/MATCH_KEY
-             for(let n of names) {
-                await push(ref(db, 'match_participants/'+currentJoinId), {
-                    ign: n, joinedBy: currentUser.uid, kills:0, win:0
-                });
-             }
+               // —— ১. সবার আগে স্লট ফুল কি না চেক করুন (ডাটা পুশ করার আগে) ——
+        const mRef = ref(db, 'matches/'+key);
+        const snap = await get(mRef);
+        const matchData = snap.val() || {};
+        const cur = matchData.joined ? parseInt(matchData.joined) : 0;
+
+        // ডাটাবেসের 'total' ফিল্ড থেকে সরাসরি স্লট সংখ্যা নেওয়া হবে
+        let totalSlots = 100; 
+        if (matchData.total !== undefined && matchData.total !== null) {
+            totalSlots = parseInt(matchData.total);
+        }
+
+        // যদি ডাটাবেসে total এর মান ০ থাকে, তাহলে টাইপ অনুযায়ী ব্যাকআপ চেক
+        if (totalSlots === 0 || isNaN(totalSlots)) {
+            const matchType = matchData.type ? matchData.type.toLowerCase() : '';
+            if (matchType.includes('solo')) totalSlots = 1;
+            else if (matchType.includes('duo')) totalSlots = 2;
+            else if (matchType.includes('squad')) totalSlots = 4;
+        }
+
+        // যদি স্লট ফুল হয়ে যায়, তবে এখানেই কোড স্টপ হয়ে যাবে, নাম ঢুকবে না
+        if ((cur + count) > totalSlots) {
+            toggleLoader(false);
+            return Swal.fire('Error', 'দুঃখিত ভাই, এই ম্যাচের স্লট ফুল হয়ে গেছে!', 'error');
+        }
+
+        // —— ২. স্লট খালি থাকলে এবার নাম ডাটাবেসে পুশ করুন ——
+        // Push to match_participants/MATCH_KEY
+        for(let n of names){
+            await push(ref(db, 'match_participants/'+currentJoinId), {
+                ign: n, joinedBy: currentUser.uid, kills:0, win:0
+            });
+        };
+
+        // —— ৩. এবার ডাটাবেসে জয়েন হওয়া প্লেয়ার সংখ্যা বাড়িয়ে দিন ——
+        await update(mRef, {joined: cur + count});
              
-       
-             // Update match count with Full Slot Check (Database Total Based)
-const mRef = ref(db, 'matches/'+key);
-const snap = await get(mRef);
-const matchData = snap.val() || {};
-const cur = matchData.joined ? parseInt(matchData.joined) : 0;
-
-// ডাটাবেসের 'total' ফিল্ড থেকে সরাসরি স্লট সংখ্যা নেওয়া হবে
-let totalSlots = 100; // কোনো কারণে ডেটা না থাকলে ডিফল্ট ১০০
-if (matchData.total !== undefined && matchData.total !== null) {
-    totalSlots = parseInt(matchData.total);
-}
-
-// যদি ডাটাবেসে total এর মান ০ থাকে, তাহলে টাইপ অনুযায়ী ব্যাকআপ চেক
-if (totalSlots === 0 || isNaN(totalSlots)) {
-    const matchType = matchData.type ? matchData.type.toLowerCase() : '';
-    if (matchType.includes('solo')) totalSlots = 1;
-    else if (matchType.includes('duo')) totalSlots = 2;
-    else if (matchType.includes('squad')) totalSlots = 4;
-}
-
-// নতুন করে যতজন জয়েন করতে চাচ্ছে তা বর্তমান সংখ্যার সাথে যোগ করে চেক করা
-if ((cur + count) > totalSlots) {
-    toggleLoader(false);
-    return Swal.fire('Error', 'দুঃখিত ভাই, এই ম্যাচের স্লট ফুল হয়ে গেছে!', 'error');
-}
-
-await update(mRef, {joined: cur + count});
                  
         
              // Log Transaction
