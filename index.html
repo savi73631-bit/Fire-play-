@@ -2842,7 +2842,6 @@
          
          toggleLoader(true);
          try {
-             await update(ref(db, 'users/'+currentUser.uid), {deposit:d, winning:w});
              
                // —— ১. সবার আগে স্লট ফুল কি না চেক করুন (ডাটা পুশ করার আগে) ——
         const mRef = ref(db, 'matches/'+key);
@@ -2881,7 +2880,8 @@
         // —— ৩. এবার ডাটাবেসে জয়েন হওয়া প্লেয়ার সংখ্যা বাড়িয়ে দিন ——
         await update(mRef, {joined: cur + count});
              
-                 
+           await update(ref(db, 'users/'+currentUser.uid), {deposit:d, winning:w});
+                   
         
              // Log Transaction
              const tid = push(ref(db, 'transactions/'+currentUser.uid)).key;
